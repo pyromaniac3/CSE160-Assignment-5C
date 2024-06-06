@@ -189,6 +189,7 @@ function main() {
 
 	//#region [[ PRIMARY SHAPE LOADER ]]
 	{
+	
 		//#region base box sizes
 		const boxWidth = 1;
 		const boxHeight = 1;
@@ -255,6 +256,11 @@ function main() {
 		// Base of Bleacher 3 and 4
 		const bleacherLeftBottom = makeCube(boxWidth*4,boxHeight*2, boxDepth*25,-13,0,0,base);
 
+		// lighting fixture
+		const poleL = makeCube2(1,20,1,19,11,0,0x3c2d4f);
+		const poleR = makeCube2(1,20,1,-19,11,0,0x3c2d4f);
+		const poleTop = makeCube2(40,1,1,0,21,0,0x3c2d4f);
+		const lightBox = makeCube2(1,1,1,0, 20, 0,0x3c2d4f);
 
 		// Add cube and cone objects as children of the cylinder
 		cylinder.add(cube1);
@@ -271,6 +277,20 @@ function main() {
 			const geometry = new THREE.BoxGeometry( w, h, d );
 			//const material = new THREE.MeshPhongMaterial( { color } );
 			const cube = new THREE.Mesh(geometry, materials);
+			// add shape to the scene
+			scene.add(cube);
+			cube.position.x = x;
+			cube.position.y = y;
+			cube.position.z = z;
+
+			return cube;
+		}
+
+		function makeCube2(w, h, d, x, y, z, color) {
+			// make dat cube 
+			const geometry = new THREE.BoxGeometry( w, h, d );
+			const material = new THREE.MeshPhongMaterial( { color } );
+			const cube = new THREE.Mesh(geometry, material);
 			// add shape to the scene
 			scene.add(cube);
 			cube.position.x = x;
