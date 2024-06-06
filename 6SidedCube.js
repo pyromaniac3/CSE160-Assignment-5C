@@ -73,16 +73,36 @@ function main() {
             size: 0.5,
             vertexColors: true, // Use this to allow different colors for each particle
             transparent: true,
-            opacity: 0.7,
+            opacity: 1,
             blending: THREE.AdditiveBlending
         });
     
         // Set different colors for the particles
         const colors = new Float32Array(particlesCount * 3);
         for (let i = 0; i < particlesCount; i++) {
-            colors[i * 3] = Math.random(); // red
-            colors[i * 3 + 1] = Math.random(); // green
-            colors[i * 3 + 2] = Math.random(); // blue
+            // Generate saturated colors by ensuring RGB values are closer to 1
+            switch(Math.floor(Math.random() * 3)){
+                case 0:
+                    colors[i * 3] = 1;
+                    colors[i * 3 + 1] = 0;
+                    colors[i * 3 + 1] = 0;
+                    break;
+                case 1:
+                    colors[i * 3] = 0;
+                    colors[i * 3 + 1] = 1;
+                    colors[i * 3 + 1] = 0;
+                    break;
+                case 2:
+                    colors[i * 3] = 0;
+                    colors[i * 3 + 1] = 0;
+                    colors[i * 3 + 1] = 1;
+                    break;
+                default:
+                    colors[i * 3] = 1;
+                    colors[i * 3 + 1] = 0;
+                    colors[i * 3 + 1] = 0;
+                    break;
+            }
         }
         confettiGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     

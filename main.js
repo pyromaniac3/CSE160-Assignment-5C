@@ -5,11 +5,19 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import {MTLLoader} from 'three/addons/loaders/MTLLoader.js';
 //#endregion
 
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+
+
 function main() {
 
 	// [[ WEBGL CANVAS SET UP ]]
 	const canvas = document.querySelector( '#c' );
 	const renderer = new THREE.WebGLRenderer( { antialias: true, canvas } );
+	const composer = new EffectComposer( renderer );
 	var cylinder = 0;
 	//#region [[ INITIAL SCENE SET UP ]]
 	//#region [[ DEFAULT CAMERA STATS ]] 
@@ -21,6 +29,8 @@ function main() {
 	camera.position.set( 0, 10, 20 );
 	//#endregion
 
+
+
 	//#region [[ ORBIT CONTROLS FOR CAMERA ]]
 	const controls = new OrbitControls( camera, canvas );
 	controls.target.set( 0, 5, 0 );
@@ -31,10 +41,17 @@ function main() {
 	// [[ NEW SCENE ]]
 	const scene = new THREE.Scene();
 	// [[ SKY COLOR ]]
-	scene.background = new THREE.Color( 'lightblue' ); 
+	scene.background = new THREE.Color( 'black' ); 
 	const cones = [] // array to animate the cone 
 	//#endregion
+	const renderPass = new RenderPass( scene, camera );
+	composer.addPass( renderPass );
 
+	//const unrealBloomPass = new UnrealBloomPass( scene, camera );
+	//composer.addPass( unrealBloomPass );
+	
+	const outputPass = new OutputPass();
+	composer.addPass( outputPass );
 	//#endregion
 
 	//#region [[ SETTING UP THE GROUND PLANE ]] 
@@ -69,7 +86,7 @@ function main() {
 	//#region [[ SKYBOX LIGHTING ]]
 	{
 
-		const skyColor = 0xB1E1FF; // light blue
+		const skyColor = 0x25282e; // light blue
 		const groundColor = 0xB97A20; // brownish orange
 		const intensity = 2;
 		const light = new THREE.HemisphereLight( skyColor, groundColor, intensity );
@@ -362,71 +379,110 @@ function main() {
     let confettiGeom;
 	let confettiVelocities;
 
+	function initializeConfettiAttributes(particlesCount) {
+		const posArray = new Float32Array(particlesCount * 3);
+		confettiVelocities = new Float32Array(particlesCount * 3);
+	
+		for (let i = 0; i < particlesCount; i++) {
+			posArray[i * 3] = (Math.random() - 0.5) * 75; // x position
+			posArray[i * 3 + 1] = (Math.random() - 0.5) * 75; // y position
+			posArray[i * 3 + 2] = (Math.random() - 0.5) * 75; // z position
+	
+			confettiVelocities[i * 3] = (Math.random() - 0.5) * 2; // x velocity
+			confettiVelocities[i * 3 + 1] = Math.random() * 5; // y velocity
+			confettiVelocities[i * 3 + 2] = (Math.random() - 0.5) * 2; // z velocity
+		}
+	
+		return posArray;
+	}
+
+	
+
 	function addTheConfetti() {
-        confettiGeom = new THREE.BufferGeometry();
-        const particlesCount = 5000;
-        const posArray = new Float32Array(particlesCount * 3);
-        confettiVelocities = new Float32Array(particlesCount * 3);
-        console.log("confetti");
-        for (let i = 0; i < particlesCount; i++) {
-            posArray[i * 3] = (Math.random() - 0.5) * 75; // x position
-            posArray[i * 3 + 1] = (Math.random() - 0.5) * 75; // y position
-            posArray[i * 3 + 2] = (Math.random() - 0.5) * 75; // z position
-    
-            confettiVelocities[i * 3] = (Math.random() - 0.5) * 2; // x velocity
-            confettiVelocities[i * 3 + 1] = Math.random() * 5; // y velocity
-            confettiVelocities[i * 3 + 2] = (Math.random() - 0.5) * 2; // z velocity
-        }
-    
-        confettiGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        confettiPositions = confettiGeom.attributes.position.array;
-    
-        const particlesMaterial = new THREE.PointsMaterial({
-            size: 0.5,
-            vertexColors: true, // Use this to allow different colors for each particle
-            transparent: true,
-            opacity: 0.7,
-            blending: THREE.AdditiveBlending
-        });
-    
-        // Set different colors for the particles
-        const colors = new Float32Array(particlesCount * 3);
-        for (let i = 0; i < particlesCount; i++) {
-            colors[i * 3] = Math.random(); // red
-            colors[i * 3 + 1] = Math.random(); // green
-            colors[i * 3 + 2] = Math.random(); // blue
-        }
-        confettiGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    
-        const particles = new THREE.Points(confettiGeom, particlesMaterial);
-        scene.add(particles);
-        console.log("hiya");
-    }
+		const particlesCount = 5000;
+		const posArray = initializeConfettiAttributes(particlesCount);
+	
+		confettiGeom = new THREE.BufferGeometry();
+		confettiGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+		confettiPositions = confettiGeom.attributes.position.array;
+	
+		const particlesMaterial = new THREE.PointsMaterial({
+			size: 0.5,
+			vertexColors: true,
+			opacity: 1,
+			blending: THREE.AdditiveBlending
+		});
+	
+		const colors = new Float32Array(particlesCount * 3);
+		for (let i = 0; i < particlesCount; i++) {
+			for (let i = 0; i < particlesCount; i++) {
+				switch(Math.floor(Math.random()*3)){
+					case 0:
+						colors[i * 3] = 1;
+						colors[i * 3 + 1] = 0;
+						colors[i * 3 + 2] = 0;
+						break;
+					case 1:
+						colors[i * 3] = 0;
+						colors[i * 3 + 1] = 1;
+						colors[i * 3 + 2] = 0;
+						break;
+					case 2:
+						colors[i * 3] = 0;
+						colors[i * 3 + 1] = 0;
+						colors[i * 3 + 2] = 1;
+						break;
+					default:
+						colors[i * 3] = 1;
+						colors[i * 3 + 1] = 0;
+						colors[i * 3 + 2] = 0;
+						break;
+				}
+			}
+		}
+		confettiGeom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+	
+		const particles = new THREE.Points(confettiGeom, particlesMaterial);
+		scene.add(particles);
+	}
+
+	const resetButton = document.getElementById('resetConfettiButton');
+    resetButton.addEventListener('click', resetConfetti);
+
+
+	function resetConfetti() {
+		const particlesCount = confettiPositions.length / 3;
+		const posArray = initializeConfettiAttributes(particlesCount);
+	
+		for (let i = 0; i < particlesCount * 3; i++) {
+			confettiPositions[i] = posArray[i];
+		}
+		confettiGeom.attributes.position.needsUpdate = true;
+	}
+	
 
 	addTheConfetti();
 
 	function animateConfetti() {
-        for (let i = 0; i < confettiPositions.length; i += 3) {
-            confettiVelocities[i + 1] -= 0.02; // Simulate gravity
-
-            // Update positions based on velocities
-            confettiPositions[i] += confettiVelocities[i];
-            confettiPositions[i + 1] += confettiVelocities[i + 1];
-            confettiPositions[i + 2] += confettiVelocities[i + 2];
-
-            // Reset particle if it falls below a certain y position
-            if (confettiPositions[i + 1] < -50) {
-                confettiPositions[i] = (Math.random() - 0.5) * 75;
-                confettiPositions[i + 1] = 50;
-                confettiPositions[i + 2] = (Math.random() - 0.5) * 75;
-
-                confettiVelocities[i] = (Math.random() - 0.5) * 2;
-                confettiVelocities[i + 1] = Math.random() * 5;
-                confettiVelocities[i + 2] = (Math.random() - 0.5) * 2;
-            }
-        }
-        confettiGeom.attributes.position.needsUpdate = true;
-    }
+		for (let i = 0; i < confettiPositions.length; i += 3) {
+			confettiVelocities[i + 1] -= 0.02; // Simulate gravity
+	
+			confettiPositions[i] += confettiVelocities[i];
+			confettiPositions[i + 1] += confettiVelocities[i + 1];
+			confettiPositions[i + 2] += confettiVelocities[i + 2];
+	
+			if (confettiPositions[i + 1] < -50) {
+				confettiPositions[i] = (Math.random() - 0.5) * 75;
+				confettiPositions[i + 1] = 50;
+				confettiPositions[i + 2] = (Math.random() - 0.5) * 75;
+	
+				confettiVelocities[i] = (Math.random() - 0.5) * 2;
+				confettiVelocities[i + 1] = Math.random() * 5;
+				confettiVelocities[i + 2] = (Math.random() - 0.5) * 2;
+			}
+		}
+		confettiGeom.attributes.position.needsUpdate = true;
+	}
 
 	
 	//#region [[ RENDER JUST THE CANVAS SIZE ]] 
@@ -462,8 +518,7 @@ function main() {
 		animateConfetti();
 		// ADD ROTATING CYLINDER HERE
 		cylinder.rotation.y += 0.01;
-	
-		renderer.render( scene, camera );
+		composer.render();
 
 		requestAnimationFrame( render );
 
